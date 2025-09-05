@@ -2,7 +2,6 @@ const Invoice = require("../modals/InvoiceModal");
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
 
-
 exports.createInvoice = async (req, res) => {
   try {
     const newInvoice = await Invoice.create(req.body.Invoicedata);
@@ -63,13 +62,33 @@ function generateInvoicePDF(invoice, includePrice) {
     .text(`Invoice Date: ${invoice.createdAt.toLocaleDateString("en-GB")}`);
 
   doc.moveDown();
-  doc.text("From: Shield Motor Group Limited");
-  doc.text("81 Taralake St. NE, Calgary, Alberta T3J 0E9");
-  doc.text("Office: (437) 236-5653");
+  doc.text(`From:${invoice?.senderDetails?.sendername}`);
+  doc.text(`${invoice?.senderDetails?.senderStreet}`);
+  doc.text(`${invoice?.senderDetails?.sendercity}`);
+  doc.text(`${invoice?.senderDetails?.senderzipcode}`);
+  doc.text(`Phone No: ${invoice?.senderDetails?.senderphone}`);
+  doc.text(`Emil: ${invoice?.senderDetails?.senderEmail}`);
 
   doc.moveDown();
-  doc.text("Bill To: SpeedX");
-  doc.text("3333 New Hyde Park, Suite 316, New York, NY 11042");
+  doc.text(`Bill To:${invoice?.receiverDetails?.receivername}`);
+  doc.text(`${invoice?.receiverDetails?.receiverStreet}`);
+  doc.text(`${invoice?.receiverDetails?.receivercity}`);
+  doc.text(`${invoice?.receiverDetails?.receiverzipcode}`);
+  doc.text(`Phone No: ${invoice?.receiverDetails?.receiverphone}`);
+  doc.text(`Emil: ${invoice?.receiverDetails?.receiverEmail}`);
+
+
+    doc.moveDown();
+    doc.text(`Pickup`);
+    doc.text(`${invoice?.senderDetails?.senderStreet}`);
+    doc.text(`${invoice?.senderDetails?.sendercity}`);
+    doc.text(`${invoice?.senderDetails?.senderzipcode}`);
+
+    doc.moveDown();
+    doc.text(`Delivery`);
+    doc.text(`${invoice?.receiverDetails?.receiverStreet}`);
+    doc.text(`${invoice?.receiverDetails?.receivercity}`);
+    doc.text(`${invoice?.receiverDetails?.receiverzipcode}`);
 
   doc.moveDown();
   doc.text("Item Details:");
@@ -89,7 +108,6 @@ function generateInvoicePDF(invoice, includePrice) {
     });
   });
 }
-
 
 exports.confirmBooking = async (req, res) => {
   try {

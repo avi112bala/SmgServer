@@ -8,6 +8,7 @@ const InvoiceSchema = new mongoose.Schema({
   secondoptionref: String,
   loadingitem: String,
   secondoption: String,
+  freezervalue:String,
   senderDetails: {
     sendername: String,
     senderphone: String,
