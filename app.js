@@ -19,10 +19,7 @@ connectDB();
 //cors middlewar 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173", // for local development
-      "https://smgserver.onrender.com", // replace with your deployed frontend URL
-    ],
+    origin: ["http://localhost:5173", "https://www.shieldmotorgroup.ca"], // change to your frontend's port
     credentials: true,
   })
 );
