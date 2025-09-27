@@ -109,10 +109,66 @@ function generateInvoicePDF(invoice, includePrice) {
   });
 }
 
+// exports.confirmBooking = async (req, res) => {
+//   try {
+//     const { invoiceId, receiverEmail, senderEmail } = req.body;
+
+//     const invoice = await Invoice.findOneAndUpdate(
+//       { invoiceId },
+//       { BookingStatus: true },
+//       { new: true }
+//     );
+
+//     if (!invoice) {
+//       return res
+//         .status(404)
+//         .json({ status: "fail", message: "Invoice not found" });
+//     }
+
+//     // Generate both PDFs
+//     const pdfWithPrice = await generateInvoicePDF(invoice, true);
+//     const pdfWithoutPrice = await generateInvoicePDF(invoice, false);
+
+//     // Send email
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: "avinash20802bala@gmail.com",
+//         pass: "tbin jwlh elaz keom",
+//       },
+//     });
+
+//     await transporter.sendMail({
+//       from: `${senderEmail}`,
+//       to: `${receiverEmail}`,
+//       subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
+//       text: "Please find the attached invoices.",
+//       attachments: [
+//         {
+//           filename: `Invoice_${invoice.invoiceId}.pdf`,
+//           content: pdfWithPrice,
+//         },
+//         {
+//           filename: `BOL_${invoice.invoiceId}.pdf`,
+//           content: pdfWithoutPrice,
+//         },
+//       ],
+//     });
+
+//     res.status(200).json({
+//       status: "success",
+//       message: "Booking confirmed and emails sent",
+//       data: invoice,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ status: "fail", message: error.message });
+//   }
+// };
 exports.confirmBooking = async (req, res) => {
   try {
     const { invoiceId, receiverEmail, senderEmail } = req.body;
 
+    // 1. Update invoice booking status
     const invoice = await Invoice.findOneAndUpdate(
       { invoiceId },
       { BookingStatus: true },
@@ -125,42 +181,56 @@ exports.confirmBooking = async (req, res) => {
         .json({ status: "fail", message: "Invoice not found" });
     }
 
-    // Generate both PDFs
-    const pdfWithPrice = await generateInvoicePDF(invoice, true);
-    const pdfWithoutPrice = await generateInvoicePDF(invoice, false);
-
-    // Send email
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "avinash20802bala@gmail.com",
-        pass: "tbin jwlh elaz keom",
-      },
-    });
-
-    await transporter.sendMail({
-      from: `${senderEmail}`,
-      to: `${receiverEmail}`,
-      subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
-      text: "Please find the attached invoices.",
-      attachments: [
-        {
-          filename: `Invoice_${invoice.invoiceId}.pdf`,
-          content: pdfWithPrice,
-        },
-        {
-          filename: `BOL_${invoice.invoiceId}.pdf`,
-          content: pdfWithoutPrice,
-        },
-      ],
-    });
-
+    // 2. Respond immediately to the client
     res.status(200).json({
       status: "success",
-      message: "Booking confirmed and emails sent",
+      message: "Booking confirmed. Emails will be sent shortly.",
       data: invoice,
     });
+
+    // 3. Generate PDFs in parallel and send email asynchronously
+    (async () => {
+      try {
+        const [pdfWithPrice, pdfWithoutPrice] = await Promise.all([
+          generateInvoicePDF(invoice, true),
+          generateInvoicePDF(invoice, false),
+        ]);
+
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: "avinash20802bala@gmail.com",
+            pass: "tbin jwlh elaz keom",
+          },
+        });
+
+        await transporter.sendMail({
+          from: senderEmail,
+          to: receiverEmail,
+          subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
+          text: "Please find the attached invoices.",
+          attachments: [
+            {
+              filename: `Invoice_${invoice.invoiceId}.pdf`,
+              content: pdfWithPrice,
+            },
+            {
+              filename: `BOL_${invoice.invoiceId}.pdf`,
+              content: pdfWithoutPrice,
+            },
+          ],
+        });
+
+        console.log(`Emails sent for invoice ${invoice.invoiceId}`);
+      } catch (err) {
+        console.error(
+          `Failed to send emails for invoice ${invoice.invoiceId}:`,
+          err
+        );
+      }
+    })();
   } catch (error) {
+    console.error(error);
     res.status(500).json({ status: "fail", message: error.message });
   }
 };
