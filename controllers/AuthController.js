@@ -87,7 +87,7 @@ exports.updatePasswordByPhone = async (req, res) => {
     const { Phone, Password, comfirmpassword } = req.body;
 
     // 1️⃣ Check if phone number exists
-    const user = await User.findOne({ Phone });
+    const user = await User.findOne({ Phone });      
     if (!user) {
       return res.status(404).json({
         status: "fail",
