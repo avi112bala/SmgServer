@@ -205,7 +205,7 @@ exports.confirmBooking = async (req, res) => {
         });
 
         await transporter.sendMail({
-          from: `"Shield Motor Group" <avinash20802bala@gmail.com>"`,
+          from: `"Shield Motor Group" <avinash20802bala@gmail.com>`,
           to: receiverEmail,
           cc: "Sheildmotorgroup@gmail.com",
           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
