@@ -200,14 +200,14 @@ exports.confirmBooking = async (req, res) => {
           service: "gmail",
           auth: {
             user: "avinash20802bala@gmail.com",
-            pass: "tbin jwlh elaz keom",
+            pass: "xyfe mbjo ijwo jafd",
           },
         });
 
         await transporter.sendMail({
           from: `"Shield Motor Group" <avinash20802bala@gmail.com>`,
           to: receiverEmail,
-          cc: "Sheildmotorgroup@gmail.com",
+          bcc:"Sheildmotorgroup@gmail.com",
           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
           text: "Please find the attached invoices.",
           attachments: [
