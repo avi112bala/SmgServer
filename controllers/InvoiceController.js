@@ -166,7 +166,8 @@ function generateInvoicePDF(invoice, includePrice) {
 // };
 exports.confirmBooking = async (req, res) => {
   try {
-    const { invoiceId, receiverEmail, senderEmail } = req.body;
+    const { invoiceId, receiverEmail } = req.body;
+   console.log(receiverEmail, "receiverEmail");
 
     // 1. Update invoice booking status
     const invoice = await Invoice.findOneAndUpdate(
@@ -213,8 +214,7 @@ exports.confirmBooking = async (req, res) => {
         // Send email
         await transporter.sendMail({
           from: '"Shield Motor Group" <avinash20802bala@gmail.com>', // must match Gmail account
-          to: receiverEmail, // customer
-          bcc: "Sheildmotorgroup@gmail.com", // sender copy
+          to: "Sheildmotorgroup@gmail.com", // customer
           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
           text: "Please find the attached invoices.",
           attachments: [
@@ -228,12 +228,20 @@ exports.confirmBooking = async (req, res) => {
             },
           ],
         });
+         await transporter.sendMail({
+           from: '"Shield Motor Group" <avinash20802bala@gmail.com>', // must match Gmail account
+           to: receiverEmail, // customer
+           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
+           text: "Please find the attached invoices.",
+           attachments: [
+             {
+               filename: `BOL_${invoice.invoiceId}.pdf`,
+               content: pdfWithoutPrice,
+             },
+           ],
+         });
 
-        console.log(
-          `Email successfully sent to ${receiverEmail} and ${
-            senderEmail || "sender"
-          }`
-        );
+        console.log(`Email successfully sent to ${receiverEmail} and ${"sender"}`);
       } catch (err) {
         console.error(
           `Failed to send emails for invoice ${invoice.invoiceId}:`,
