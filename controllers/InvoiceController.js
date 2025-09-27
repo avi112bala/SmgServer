@@ -139,8 +139,8 @@ function generateInvoicePDF(invoice, includePrice) {
 //     });
 
 //     await transporter.sendMail({
-//       from: `${senderEmail}`,
-//       to: `${receiverEmail}`,
+//       from: `avinash20802bala@gmail.com`,
+//       to: `avi20802bala@gmail.com`,
 //       subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
 //       text: "Please find the attached invoices.",
 //       attachments: [
@@ -166,7 +166,7 @@ function generateInvoicePDF(invoice, includePrice) {
 // };
 exports.confirmBooking = async (req, res) => {
   try {
-    const { invoiceId, receiverEmail } = req.body;
+    const { invoiceId, receiverEmail, senderEmail } = req.body;
 
     // 1. Update invoice booking status
     const invoice = await Invoice.findOneAndUpdate(
@@ -181,33 +181,40 @@ exports.confirmBooking = async (req, res) => {
         .json({ status: "fail", message: "Invoice not found" });
     }
 
-    // 2. Respond immediately to the client
+    // 2. Respond immediately to client
     res.status(200).json({
       status: "success",
       message: "Booking confirmed. Emails will be sent shortly.",
       data: invoice,
     });
 
-    // 3. Generate PDFs in parallel and send email asynchronously
+    // 3. Send email asynchronously
     (async () => {
       try {
+        // Generate PDFs in parallel
         const [pdfWithPrice, pdfWithoutPrice] = await Promise.all([
           generateInvoicePDF(invoice, true),
           generateInvoicePDF(invoice, false),
         ]);
 
+        // Configure transporter
         const transporter = nodemailer.createTransport({
           service: "gmail",
           auth: {
             user: "avinash20802bala@gmail.com",
-            pass: "xyfe mbjo ijwo jafd",
+            pass: "xyfe mbjo ijwo jafd", // Gmail App Password
           },
         });
 
+        // Verify transporter (throws if SMTP config is wrong)
+        await transporter.verify();
+        console.log("SMTP transporter verified successfully");
+
+        // Send email
         await transporter.sendMail({
-          from: `"Shield Motor Group" <avinash20802bala@gmail.com>`,
-          to: receiverEmail,
-          bcc:"Sheildmotorgroup@gmail.com",
+          from: '"Shield Motor Group" <avinash20802bala@gmail.com>', // must match Gmail account
+          to: receiverEmail, // customer
+          bcc: "Sheildmotorgroup@gmail.com", // sender copy
           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
           text: "Please find the attached invoices.",
           attachments: [
@@ -222,7 +229,11 @@ exports.confirmBooking = async (req, res) => {
           ],
         });
 
-        console.log(`Emails sent for invoice ${invoice.invoiceId}`);
+        console.log(
+          `Email successfully sent to ${receiverEmail} and ${
+            senderEmail || "sender"
+          }`
+        );
       } catch (err) {
         console.error(
           `Failed to send emails for invoice ${invoice.invoiceId}:`,
