@@ -166,7 +166,7 @@ function generateInvoicePDF(invoice, includePrice) {
 // };
 exports.confirmBooking = async (req, res) => {
   try {
-    const { invoiceId, receiverEmail, senderEmail } = req.body;
+    const { invoiceId, receiverEmail } = req.body;
 
     // 1. Update invoice booking status
     const invoice = await Invoice.findOneAndUpdate(
