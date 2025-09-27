@@ -111,7 +111,7 @@ function generateInvoicePDF(invoice, includePrice) {
 
 exports.confirmBooking = async (req, res) => {
   try {
-    const { invoiceId } = req.body;
+    const { invoiceId, receiverEmail, senderEmail } = req.body;
 
     const invoice = await Invoice.findOneAndUpdate(
       { invoiceId },
@@ -139,8 +139,8 @@ exports.confirmBooking = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: "avinash20802bala@gmail.com",
-      to: "avi20802bala@gmail.com",
+      from: `${senderEmail}`,
+      to: `${receiverEmail}`,
       subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
       text: "Please find the attached invoices.",
       attachments: [
