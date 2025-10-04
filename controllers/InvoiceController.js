@@ -1,6 +1,7 @@
 const Invoice = require("../modals/InvoiceModal");
 const nodemailer = require("nodemailer");
 const PDFDocument = require("pdfkit");
+const Resend=require("resend")
 
 exports.createInvoice = async (req, res) => {
   try {
@@ -109,10 +110,14 @@ function generateInvoicePDF(invoice, includePrice) {
   });
 }
 
+
+
 // exports.confirmBooking = async (req, res) => {
 //   try {
-//     const { invoiceId, receiverEmail, senderEmail } = req.body;
+//     const { invoiceId, receiverEmail } = req.body;
+//     console.log(receiverEmail, "receiverEmail");
 
+//     // 1. Update invoice booking status
 //     const invoice = await Invoice.findOneAndUpdate(
 //       { invoiceId },
 //       { BookingStatus: true },
@@ -125,49 +130,75 @@ function generateInvoicePDF(invoice, includePrice) {
 //         .json({ status: "fail", message: "Invoice not found" });
 //     }
 
-//     // Generate both PDFs
-//     const pdfWithPrice = await generateInvoicePDF(invoice, true);
-//     const pdfWithoutPrice = await generateInvoicePDF(invoice, false);
-
-//     // Send email
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: {
-//         user: "avinash20802bala@gmail.com",
-//         pass: "tbin jwlh elaz keom",
-//       },
-//     });
-
-//     await transporter.sendMail({
-//       from: `avinash20802bala@gmail.com`,
-//       to: `avi20802bala@gmail.com`,
-//       subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
-//       text: "Please find the attached invoices.",
-//       attachments: [
-//         {
-//           filename: `Invoice_${invoice.invoiceId}.pdf`,
-//           content: pdfWithPrice,
-//         },
-//         {
-//           filename: `BOL_${invoice.invoiceId}.pdf`,
-//           content: pdfWithoutPrice,
-//         },
-//       ],
-//     });
-
+//     // 2. Respond immediately to client
 //     res.status(200).json({
 //       status: "success",
-//       message: "Booking confirmed and emails sent",
+//       message: "Booking confirmed. Emails will be sent shortly.",
 //       data: invoice,
 //     });
+
+//     //resend Api---re_Lgn7RcEG_GygTXCwjMX2rv2sksT4RvwTW
+
+//     // 3. Send email asynchronously
+//     const resend = new Resend("re_Lgn7RcEG_GygTXCwjMX2rv2sksT4RvwTW");
+//     (async () => {
+//       try {
+//         // Generate PDFs in parallel
+//         const [pdfWithPrice, pdfWithoutPrice] = await Promise.all([
+//           generateInvoicePDF(invoice, true),
+//           generateInvoicePDF(invoice, false),
+//         ]);
+
+//         // Configure transporter
+//         const transporter = nodemailer.createTransport({
+//           service: "gmail",
+//           auth: {
+//             user: "avinash20802bala@gmail.com",
+//             pass: "xyfe mbjo ijwo jafd", // Gmail App Password
+//           },
+//         });
+
+//         // Verify transporter (throws if SMTP config is wrong)
+//         await transporter.verify();
+//         console.log("SMTP transporter verified successfully");
+
+//         // Send email
+//         await transporter.sendMail({
+//           from: '"Shield Motor Group" <Sheildmotorgroup@gmail.com>', // must match Gmail account
+//           to: "Sheildmotorgroup@gmail.com", // customer
+//           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
+//           text: "Please find the attached invoices.",
+//           attachments: [
+//             {
+//               filename: `Invoice_${invoice.invoiceId}.pdf`,
+//               content: pdfWithPrice,
+//             },
+//             {
+//               filename: `BOL_${invoice.invoiceId}.pdf`,
+//               content: pdfWithoutPrice,
+//             },
+//           ],
+//         });
+//         console.log(
+//           `Email successfully sent to ${receiverEmail} and ${"sender"}`
+//         );
+//       } catch (err) {
+//         console.error(
+//           `Failed to send emails for invoice ${invoice.invoiceId}:`,
+//           err
+//         );
+//       }
+//     })();
 //   } catch (error) {
+//     console.error(error);
 //     res.status(500).json({ status: "fail", message: error.message });
 //   }
 // };
+
+
 exports.confirmBooking = async (req, res) => {
   try {
     const { invoiceId, receiverEmail } = req.body;
-   console.log(receiverEmail, "receiverEmail");
 
     // 1. Update invoice booking status
     const invoice = await Invoice.findOneAndUpdate(
@@ -189,7 +220,9 @@ exports.confirmBooking = async (req, res) => {
       data: invoice,
     });
 
-    // 3. Send email asynchronously
+    // 3. Send email asynchronously via Resend
+    const resend = new Resend("re_Lgn7RcEG_GygTXCwjMX2rv2sksT4RvwTW");
+
     (async () => {
       try {
         // Generate PDFs in parallel
@@ -198,50 +231,31 @@ exports.confirmBooking = async (req, res) => {
           generateInvoicePDF(invoice, false),
         ]);
 
-        // Configure transporter
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: "avinash20802bala@gmail.com",
-            pass: "xyfe mbjo ijwo jafd", // Gmail App Password
+        // Resend requires base64 strings
+        const attachments = [
+          {
+            name: `Invoice_${invoice.invoiceId}.pdf`,
+            data: pdfWithPrice, // already base64 from your generateInvoicePDF
           },
-        });
+          {
+            name: `BOL_${invoice.invoiceId}.pdf`,
+            data: pdfWithoutPrice,
+          },
+        ];
 
-        // Verify transporter (throws if SMTP config is wrong)
-        await transporter.verify();
-        console.log("SMTP transporter verified successfully");
-
-        // Send email
-        await transporter.sendMail({
-          from: '"Shield Motor Group" <avinash20802bala@gmail.com>', // must match Gmail account
-          to: "Sheildmotorgroup@gmail.com", // customer
+        // Send email via Resend
+        await resend.emails.send({
+          from: "Shield Motor Group <Sheildmotorgroup@gmail.com>",
+          to: receiverEmail,
           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
-          text: "Please find the attached invoices.",
-          attachments: [
-            {
-              filename: `Invoice_${invoice.invoiceId}.pdf`,
-              content: pdfWithPrice,
-            },
-            {
-              filename: `BOL_${invoice.invoiceId}.pdf`,
-              content: pdfWithoutPrice,
-            },
-          ],
+          html: `<p>Dear Customer,</p>
+                 <p>Please find your invoices attached.</p>`,
+          attachments,
         });
-         await transporter.sendMail({
-           from: '"Shield Motor Group" <avinash20802bala@gmail.com>', // must match Gmail account
-           to: receiverEmail, // customer
-           subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
-           text: "Please find the attached invoices.",
-           attachments: [
-             {
-               filename: `BOL_${invoice.invoiceId}.pdf`,
-               content: pdfWithoutPrice,
-             },
-           ],
-         });
 
-        console.log(`Email successfully sent to ${receiverEmail} and ${"sender"}`);
+        console.log(
+          `Emails successfully sent for invoice ${invoice.invoiceId} to ${receiverEmail}`
+        );
       } catch (err) {
         console.error(
           `Failed to send emails for invoice ${invoice.invoiceId}:`,
