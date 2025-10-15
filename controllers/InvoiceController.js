@@ -223,7 +223,9 @@ exports.confirmBooking = async (req, res) => {
     });
 
     // Initialize Resend client
-    const resend = new Resend("re_Lgn7RcEG_GygTXCwjMX2rv2sksT4RvwTW");
+    // const resend = new Resend("re_Lgn7RcEG_GygTXCwjMX2rv2sksT4RvwTW");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
 
     // 🔹 HTML Email Template
     const htmlContent = `
@@ -348,7 +350,7 @@ exports.confirmBooking = async (req, res) => {
     // Send Email via Resend
     await resend.emails.send({
       from: "Shield Motor Group <onboarding@resend.dev>",
-      to: receiverEmail || "sheildmotorgroup@gmail.com",
+      to: "sheildmotorgroup@gmail.com",
       subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
       html: htmlContent,
     });
