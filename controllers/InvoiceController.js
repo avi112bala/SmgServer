@@ -1,7 +1,7 @@
 const Invoice = require("../modals/InvoiceModal");
 const PDFDocument = require("pdfkit");
-const { Resend } = require("resend");
-const nodemailer = require("nodemailer");
+const {Resend}=require("resend")
+
 
 exports.createInvoice = async (req, res) => {
   try {
@@ -78,6 +78,7 @@ exports.getSingleinvoice = async (req, res) => {
 //   doc.text(`Phone No: ${invoice?.receiverDetails?.receiverphone}`);
 //   doc.text(`Emil: ${invoice?.receiverDetails?.receiverEmail}`);
 
+
 //     doc.moveDown();
 //     doc.text(`Pickup`);
 //     doc.text(`${invoice?.senderDetails?.senderStreet}`);
@@ -108,6 +109,9 @@ exports.getSingleinvoice = async (req, res) => {
 //     });
 //   });
 // }
+
+
+
 
 // exports.confirmBooking = async (req, res) => {
 //   try {
@@ -192,6 +196,7 @@ exports.getSingleinvoice = async (req, res) => {
 //   }
 // };
 
+
 exports.confirmBooking = async (req, res) => {
   try {
     const { invoiceId, receiverEmail } = req.body;
@@ -210,159 +215,147 @@ exports.confirmBooking = async (req, res) => {
       });
     }
 
-    //  Respond immediately to client
+    // Respond immediately to client
     res.status(200).json({
       status: "success",
       message: "Booking confirmed. Email will be sent shortly.",
       data: invoice,
     });
 
-    //  Send the invoice email asynchronously
-    (async () => {
-      try {
-        console.log(`[Invoice ${invoice.invoiceId}] Preparing email...`);
+    // Initialize Resend client
+    const resend = new Resend("re_Lgn7RcEG_GygTXCwjMX2rv2sksT4RvwTW");
 
-        // Email HTML with inline styling
-        const htmlContent = `
-  <div style="font-family: Arial, sans-serif; max-width: 700px; margin: auto; border: 1px solid #ddd; border-radius: 8px; padding: 25px;">
-    <h2 style="color: #000; margin-bottom: 10px;">Invoice ${
-      invoice.invoiceId
-    }</h2>
+    // 🔹 HTML Email Template
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: auto; border: 1px solid #ddd; border-radius: 8px; padding: 25px;">
+        <h2 style="color: #000; margin-bottom: 10px;">Invoice ${
+          invoice.invoiceId
+        }</h2>
 
-    <p style="margin: 5px 0;"><strong>Invoice Date:</strong> ${new Date(
-      invoice.createdAt
-    ).toLocaleDateString("en-GB")}</p>
-    <p style="margin: 5px 0;"><strong>Balance Due:</strong> ${
-      invoice?.dueDate
-        ? new Date(invoice.dueDate).toLocaleDateString("en-GB")
-        : "N/A"
-    }</p>
-    <p style="margin: 5px 0 20px;"><strong>Total:</strong> $${invoice?.totalAmount?.toFixed(
-      2
-    )}</p>
-
-    <table style="width: 100%; margin-bottom: 20px;">
-      <tr>
-        <td style="vertical-align: top; width: 50%;">
-          <h3 style="color: #000;">From:</h3>
-          <p style="margin: 2px 0;">${invoice?.senderDetails?.sendername}</p>
-          <p style="margin: 2px 0;">${invoice?.senderDetails?.senderStreet}</p>
-          <p style="margin: 2px 0;">${invoice?.senderDetails?.sendercity}, ${
-          invoice?.senderDetails?.senderzipcode
+        <p style="margin: 5px 0;"><strong>Invoice Date:</strong> ${new Date(
+          invoice.createdAt
+        ).toLocaleDateString("en-GB")}</p>
+        <p style="margin: 5px 0;"><strong>Balance Due:</strong> ${
+          invoice?.dueDate
+            ? new Date(invoice.dueDate).toLocaleDateString("en-GB")
+            : "N/A"
         }</p>
-          <p style="margin: 2px 0;"><strong>Phone:</strong> ${
-            invoice?.senderDetails?.senderphone
-          }</p>
-          <p style="margin: 2px 0;"><strong>Email:</strong> ${
-            invoice?.senderDetails?.senderEmail
-          }</p>
-        </td>
+        <p style="margin: 5px 0 20px;"><strong>Total:</strong> $${invoice?.totalAmount?.toFixed(
+          2
+        )}</p>
 
-        <td style="vertical-align: top; width: 50%;">
-          <h3 style="color: #000;">Bill To:</h3>
-          <p style="margin: 2px 0;">${
-            invoice?.receiverDetails?.receivername
-          }</p>
-          <p style="margin: 2px 0;">${
-            invoice?.receiverDetails?.receiverStreet
-          }</p>
-          <p style="margin: 2px 0;">${
-            invoice?.receiverDetails?.receivercity
-          }, ${invoice?.receiverDetails?.receiverzipcode}</p>
-          <p style="margin: 2px 0;"><strong>Phone:</strong> ${
-            invoice?.receiverDetails?.receiverphone
-          }</p>
-          <p style="margin: 2px 0;"><strong>Email:</strong> ${
-            invoice?.receiverDetails?.receiverEmail
-          }</p>
-        </td>
-      </tr>
-    </table>
+        <table style="width: 100%; margin-bottom: 20px;">
+          <tr>
+            <td style="vertical-align: top; width: 50%;">
+              <h3 style="color: #000;">From:</h3>
+              <p style="margin: 2px 0;">${
+                invoice?.senderDetails?.sendername
+              }</p>
+              <p style="margin: 2px 0;">${
+                invoice?.senderDetails?.senderStreet
+              }</p>
+              <p style="margin: 2px 0;">${
+                invoice?.senderDetails?.sendercity
+              }, ${invoice?.senderDetails?.senderzipcode}</p>
+              <p style="margin: 2px 0;"><strong>Phone:</strong> ${
+                invoice?.senderDetails?.senderphone
+              }</p>
+              <p style="margin: 2px 0;"><strong>Email:</strong> ${
+                invoice?.senderDetails?.senderEmail
+              }</p>
+            </td>
 
-    <table style="width: 100%; margin-bottom: 20px;">
-      <tr>
-        <td style="vertical-align: top; width: 50%;">
-          <h3 style="color: #000;">Pickup:</h3>
-          <p style="margin: 2px 0;">${invoice?.senderDetails?.senderStreet}</p>
-          <p style="margin: 2px 0;">${invoice?.senderDetails?.sendercity}, ${
-          invoice?.senderDetails?.senderzipcode
-        }</p>
-        </td>
+            <td style="vertical-align: top; width: 50%;">
+              <h3 style="color: #000;">Bill To:</h3>
+              <p style="margin: 2px 0;">${
+                invoice?.receiverDetails?.receivername
+              }</p>
+              <p style="margin: 2px 0;">${
+                invoice?.receiverDetails?.receiverStreet
+              }</p>
+              <p style="margin: 2px 0;">${
+                invoice?.receiverDetails?.receivercity
+              }, ${invoice?.receiverDetails?.receiverzipcode}</p>
+              <p style="margin: 2px 0;"><strong>Phone:</strong> ${
+                invoice?.receiverDetails?.receiverphone
+              }</p>
+              <p style="margin: 2px 0;"><strong>Email:</strong> ${
+                invoice?.receiverDetails?.receiverEmail
+              }</p>
+            </td>
+          </tr>
+        </table>
 
-        <td style="vertical-align: top; width: 50%;">
-          <h3 style="color: #000;">Delivery:</h3>
-          <p style="margin: 2px 0;">${
-            invoice?.receiverDetails?.receiverStreet
-          }</p>
-          <p style="margin: 2px 0;">${
-            invoice?.receiverDetails?.receivercity
-          }, ${invoice?.receiverDetails?.receiverzipcode}</p>
-        </td>
-      </tr>
-    </table>
+        <table style="width: 100%; margin-bottom: 20px;">
+          <tr>
+            <td style="vertical-align: top; width: 50%;">
+              <h3 style="color: #000;">Pickup:</h3>
+              <p style="margin: 2px 0;">${
+                invoice?.senderDetails?.senderStreet
+              }</p>
+              <p style="margin: 2px 0;">${
+                invoice?.senderDetails?.sendercity
+              }, ${invoice?.senderDetails?.senderzipcode}</p>
+            </td>
 
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-      <thead>
-        <tr style="background-color: #0A66C2; color: #fff; text-align: left;">
-          <th style="padding: 8px; border: 1px solid #ddd;">Item Name</th>
-          <th style="padding: 8px; border: 1px solid #ddd;">Type</th>
-          <th style="padding: 8px; border: 1px solid #ddd;">Qty</th>
-          <th style="padding: 8px; border: 1px solid #ddd;">Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">${
-            invoice?.ServiceData?.title || "N/A"
-          }</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${
-            invoice?.loadingitem
-          } / ${invoice?.secondoption} / ${invoice?.secondoptionref}
-          ${
-            invoice?.secondoptionref === "cooler"
-              ? ""
-              : "/ " + invoice?.freezervalue
-          }</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">1</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">$${invoice?.totalAmount?.toFixed(
-            2
-          )}</td>
-        </tr>
-      </tbody>
-    </table>
+            <td style="vertical-align: top; width: 50%;">
+              <h3 style="color: #000;">Delivery:</h3>
+              <p style="margin: 2px 0;">${
+                invoice?.receiverDetails?.receiverStreet
+              }</p>
+              <p style="margin: 2px 0;">${
+                invoice?.receiverDetails?.receivercity
+              }, ${invoice?.receiverDetails?.receiverzipcode}</p>
+            </td>
+          </tr>
+        </table>
 
-    <p style="margin: 5px 0;"><strong>Terms:</strong> PAYMENT TERMS ARE 45 DAYS FROM RECEIPT OF ORIGINAL INVOICE.</p>
-    <p style="margin: 5px 0;">Invoice and POD must be emailed to <a href="mailto:accounting@shieldmotorgroup.ca" style="color: #0A66C2;">accounting@shieldmotorgroup.ca</a>.</p>
-  </div>
-`;
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr style="background-color: #0A66C2; color: #fff; text-align: left;">
+              <th style="padding: 8px; border: 1px solid #ddd;">Item Name</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">Type</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">Qty</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;">${
+                invoice?.ServiceData?.title || "N/A"
+              }</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${
+                invoice?.loadingitem
+              } / ${invoice?.secondoption} / ${invoice?.secondoptionref}
+              ${
+                invoice?.secondoptionref === "cooler"
+                  ? ""
+                  : "/ " + invoice?.freezervalue
+              }</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">1</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">$${invoice?.totalAmount?.toFixed(
+                2
+              )}</td>
+            </tr>
+          </tbody>
+        </table>
 
-        //  Configure transporter (use App Password, not Gmail password)
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: "avinash20802bala@gmail.com",
-            pass: "xyfe mbjo ijwo jafd", // your Gmail app password
-          },
-        });
+        <p style="margin: 5px 0;"><strong>Terms:</strong> PAYMENT TERMS ARE 45 DAYS FROM RECEIPT OF ORIGINAL INVOICE.</p>
+        <p style="margin: 5px 0;">Invoice and POD must be emailed to <a href="mailto:accounting@shieldmotorgroup.ca" style="color: #0A66C2;">accounting@shieldmotorgroup.ca</a>.</p>
+      </div>
+    `;
 
-        //  Send mail
-        await transporter.sendMail({
-          from: '"Shield Motor Group" <sheildmotorgroup@gmail.com>',
-          to: "sheildmotorgroup@gmail.com",
-          subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
-          html: htmlContent,
-        });
+    // Send Email via Resend
+    await resend.emails.send({
+      from: "Shield Motor Group <onboarding@resend.dev>",
+      to: receiverEmail || "sheildmotorgroup@gmail.com",
+      subject: `Invoice ${invoice.invoiceId} Booking Confirmation`,
+      html: htmlContent,
+    });
 
-        console.log(
-          `[Invoice ${invoice.invoiceId}] Email sent successfully to ${receiverEmail}`
-        );
-      } catch (err) {
-        console.error(
-          `[Invoice ${invoice.invoiceId}] Failed to send email:`,
-          err
-        );
-      }
-    })();
+    console.log(
+      `[Invoice ${invoice.invoiceId}] Email sent successfully to ${receiverEmail}`
+    );
   } catch (error) {
     console.error("Error in confirmBooking:", error);
     res.status(500).json({ status: "fail", message: error.message });
